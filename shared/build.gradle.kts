@@ -28,8 +28,9 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.ktor:ktor-client-core:1.6.7")
-                implementation("com.squareup.sqldelight:runtime:1.5.3")
+                implementation("com.mapbox.maps:android:11.4.0")
+                implementation("io.ktor:ktor-client-core:2.3.3")
+                implementation("com.squareup.sqldelight:runtime:1.5.5")
             }
         }
         val commonTest by getting {
@@ -39,12 +40,7 @@ kotlin {
         }
         val androidMain by getting {
             dependencies {
-                implementation("com.mapbox.mapboxsdk:mapbox-android-sdk:9.6.1")
-            }
-        }
-        val iosMain by getting {
-            dependencies {
-                implementation("io.ktor:ktor-client-ios:1.6.7")
+                implementation("com.mapbox.maps:android:11.4.0")
             }
         }
     }
