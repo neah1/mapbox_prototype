@@ -28,19 +28,13 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("com.mapbox.maps:android:11.4.0")
-                implementation("io.ktor:ktor-client-core:2.3.3")
-                implementation("com.squareup.sqldelight:runtime:1.5.5")
-            }
-        }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
+                implementation ("com.amazonaws:aws-android-sdk-s3:2.28.2")
             }
         }
         val androidMain by getting {
             dependencies {
                 implementation("com.mapbox.maps:android:11.4.0")
+                implementation("com.mapbox.extension:maps-compose:11.4.0")
             }
         }
     }

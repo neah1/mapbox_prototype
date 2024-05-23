@@ -1,7 +1,5 @@
 package com.example.mapboxprototype
 
-interface Platform {
-    val name: String
+expect class DatabaseClient {
+    suspend fun fetchData(query: String, parameters: Map<String, Any>): List<Map<String, Any>>
 }
-
-expect fun getPlatform(): Platform
