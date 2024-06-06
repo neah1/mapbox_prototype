@@ -9,3 +9,5 @@ captures
 local.properties
 xcuserdata
 gradle.properties
+iaq_data.csv
+*.hprof

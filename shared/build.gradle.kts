@@ -10,7 +10,7 @@ kotlin {
     android {
         compilations.all {
             kotlinOptions {
-                jvmTarget = "1.8"
+                jvmTarget = "17"
             }
         }
     }
@@ -28,13 +28,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation ("com.amazonaws:aws-android-sdk-s3:2.28.2")
-            }
-        }
-        val androidMain by getting {
-            dependencies {
-                implementation("com.mapbox.maps:android:11.4.0")
-                implementation("com.mapbox.extension:maps-compose:11.4.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             }
         }
     }
