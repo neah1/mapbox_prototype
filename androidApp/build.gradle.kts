@@ -1,15 +1,15 @@
 plugins {
-    id("com.android.application")
-    kotlin("android")
+    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.kotlinAndroid)
 }
 
 android {
     namespace = "com.example.mapboxprototype.android"
-    compileSdk = 33
+    compileSdk = 34
     defaultConfig {
         applicationId = "com.example.mapboxprototype.android"
-        minSdk = 26
-        targetSdk = 33
+        minSdk = 24
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
     }
@@ -17,7 +17,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.7"
+        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
     }
     packaging {
         resources {
@@ -39,14 +39,12 @@ android {
 }
 
 dependencies {
-    implementation(project(":shared"))
-    implementation("com.amazonaws:aws-android-sdk-s3:2.75.1")
+    implementation(projects.shared)
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.androidx.activity.compose)
+    debugImplementation(libs.compose.ui.tooling)
     implementation("com.mapbox.maps:android:11.4.0")
     implementation("com.mapbox.extension:maps-compose:11.4.0")
-    implementation("androidx.compose.ui:ui:1.6.7")
-    implementation("androidx.compose.ui:ui-tooling:1.6.7")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
-    implementation("androidx.compose.foundation:foundation:1.6.7")
-    implementation("androidx.compose.material:material:1.6.7")
-    implementation("androidx.activity:activity-compose:1.9.0")
 }
