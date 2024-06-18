@@ -10,4 +10,6 @@ local.properties
 xcuserdata
 
 gradle.properties
-iaq_data.csv
+shared/src/commonMain/resources/iaq_data.csv
+
+shared/src/androidMain/resources/iaq_data.csv
