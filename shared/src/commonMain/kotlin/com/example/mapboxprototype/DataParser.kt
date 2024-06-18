@@ -4,12 +4,30 @@ expect object SensorDataParser {
     suspend fun parseCsv(filePath: String): List<SensorData>
 }
 
-suspend fun retrieveAndAggregateValues(
-        week: String,
-        selectedSensor: String,
-        aggregateType: String,
-        virtualSensorSubtype: String? = null,
-        geohashResolution: Int
+fun truncateGeohash(geohash: String, resolution: Int): String = geohash.takeIf { resolution in 1..it.length }?.substring(0, resolution) ?: geohash
+
+
+fun aggregateValues(
+        data: List<Pair<Double, String>>,
+        aggregateFunction: AggregateFunction
+): Map<String, Double> {
+    val groupedData = data.groupBy { it.second }
+    return groupedData.mapValues { (_, values) ->
+        val valuesList = values.map { it.first }
+        when (aggregateFunction) {
+            AggregateFunction.AVERAGE -> valuesList.average()
+            AggregateFunction.MAX -> valuesList.maxOrNull() ?: 0.0
+            AggregateFunction.MIN -> valuesList.minOrNull() ?: 0.0
+        }
+    }
+}
+
+suspend fun getGeohashData(
+    week: String,
+    selectedSensor: String,
+    aggregateType: AggregateFunction,
+    virtualSensorSubtype: String? = null,
+    geohashResolution: Int
 ): Map<String, Double> {
     val data = SensorDataParser.parseCsv("iaq_data.csv")
     val filteredData = data.filter { it.week == week }
@@ -33,29 +51,3 @@ suspend fun retrieveAndAggregateValues(
 
     return aggregateValues(truncatedGeohashData, aggregateType)
 }
-
-fun aggregateValues(
-        data: List<Pair<Double, String>>,
-        aggregateFunction: String
-): Map<String, Double> {
-    val groupedData = data.groupBy { it.second }
-    return groupedData.mapValues { (_, values) ->
-        val valuesList = values.map { it.first }
-        when (aggregateFunction) {
-            "average" -> valuesList.average()
-            "max" -> valuesList.maxOrNull() ?: 0.0
-            "min" -> valuesList.minOrNull() ?: 0.0
-            else -> throw IllegalArgumentException("Unknown aggregate function: $aggregateFunction")
-        }
-    }
-}
-
-fun truncateGeohash(geohash: String, resolution: Int): String {
-    return if (resolution in 1..geohash.length) {
-        geohash.substring(0, resolution)
-    } else {
-        geohash
-    }
-}
-
-
