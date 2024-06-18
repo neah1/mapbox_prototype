@@ -1,10 +1,19 @@
 package com.example.mapboxprototype
 
 expect object SensorDataParser {
-    suspend fun parseCsv(filePath: String): List<SensorData>
+    suspend fun parseCsv(filePath: String, week: String): List<SensorData>
 }
 
-fun truncateGeohash(geohash: String, resolution: Int): String = geohash.takeIf { resolution in 1..it.length }?.substring(0, resolution) ?: geohash
+fun truncateGeohash(geohash: String, resolution: Int): String {
+    require(resolution > 0) { "Resolution must be greater than zero" }
+    require(geohash.matches(Regex("^[0-9a-zA-Z]+$"))) { "Invalid geohash format: $geohash" }
+
+    return if (resolution >= geohash.length) {
+        geohash
+    } else {
+        geohash.substring(0, resolution)
+    }
+}
 
 
 fun aggregateValues(
@@ -24,24 +33,22 @@ fun aggregateValues(
 
 suspend fun getGeohashData(
     week: String,
-    selectedSensor: String,
+    selectedSensor: SensorType,
     aggregateType: AggregateFunction,
-    virtualSensorSubtype: String? = null,
+    virtualSensorSubtype: VirtualSensorType? = null,
     geohashResolution: Int
 ): Map<String, Double> {
-    val data = SensorDataParser.parseCsv("iaq_data.csv")
-    val filteredData = data.filter { it.week == week }
+    val data = SensorDataParser.parseCsv("iaq_data.csv", week)
 
-    val column = if (selectedSensor in listOf("virusrisk", "occupancy")) {
-        "vs_${selectedSensor}_${virtualSensorSubtype}_$aggregateType"
-    } else {
-        "${selectedSensor}_$aggregateType"
+    val column = when (selectedSensor) {
+        SensorType.VIRUS_RISK, SensorType.OCCUPANCY -> "vs_${selectedSensor.name.lowercase()}_${virtualSensorSubtype?.name?.lowercase()}_${aggregateType.name.lowercase()}"
+        else -> "${selectedSensor.name.lowercase()}_${aggregateType.name.lowercase()}"
     }
 
-    val truncatedGeohashData = filteredData.mapNotNull { row ->
+    val truncatedGeohashData = data.mapNotNull { row ->
         val propertyGetterMap = getPropertyGetterMap(row)
         val value = propertyGetterMap[column]
-        if (value != null) {
+        if (value != null && row.geohash.isNotEmpty()) {
             val truncatedGeohash = truncateGeohash(row.geohash, geohashResolution)
             Pair(value, truncatedGeohash)
         } else {
