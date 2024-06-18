@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.mapboxprototype.AggregateFunction
+import com.example.mapboxprototype.SensorType
+import com.example.mapboxprototype.getGeohashAreaInfo
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -40,7 +42,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             val geohashData = com.example.mapboxprototype.getGeohashData(
                 "2023-48",
-                "radon",
+                SensorType.RADON,
                 AggregateFunction.MAX,
                 null,
                 5
@@ -58,22 +60,12 @@ class MainActivity : ComponentActivity() {
 
         for ((geohash, value) in geohashData) {
             // Decode the geohash to a Point (latitude, longitude)
-            val point = decodeGeohash(geohash)
+            val (point, area) = getGeohashAreaInfo(geohash)
             val annotationOptions = PointAnnotationOptions()
-                .withPoint(point)
+                .withPoint(Point.fromLngLat(point.first, point.second))
                 .withTextField(value.toString())
             pointAnnotationManager.create(annotationOptions)
         }
     }
 
-    private fun decodeGeohash(geohash: String): Point {
-        // This is just an example implementation. Replace with a real geohash decoding function.
-        val decoded = when (geohash) {
-            "9xj" -> Point.fromLngLat(-98.0, 39.5)
-            "9xp" -> Point.fromLngLat(-97.0, 40.0)
-            "9xq" -> Point.fromLngLat(-96.0, 41.0)
-            else -> Point.fromLngLat(-98.0, 39.5)
-        }
-        return decoded
-    }
 }
