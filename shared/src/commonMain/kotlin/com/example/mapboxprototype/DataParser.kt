@@ -4,18 +4,6 @@ expect object SensorDataParser {
     suspend fun parseCsv(filePath: String, week: String): List<SensorData>
 }
 
-fun truncateGeohash(geohash: String, resolution: Int): String {
-    require(resolution > 0) { "Resolution must be greater than zero" }
-    require(geohash.matches(Regex("^[0-9a-zA-Z]+$"))) { "Invalid geohash format: $geohash" }
-
-    return if (resolution >= geohash.length) {
-        geohash
-    } else {
-        geohash.substring(0, resolution)
-    }
-}
-
-
 fun aggregateValues(
         data: List<Pair<Double, String>>,
         aggregateFunction: AggregateFunction

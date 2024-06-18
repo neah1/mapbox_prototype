@@ -1,9 +1,4 @@
-
-import com.example.mapboxprototype.AggregateFunction
-import com.example.mapboxprototype.SensorType
-import com.example.mapboxprototype.aggregateValues
-import com.example.mapboxprototype.getGeohashData
-import com.example.mapboxprototype.truncateGeohash
+package com.example.mapboxprototype
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
