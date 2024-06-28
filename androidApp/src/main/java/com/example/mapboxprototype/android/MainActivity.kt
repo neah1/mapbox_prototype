@@ -6,6 +6,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.mapboxprototype.AggregateFunction
 import com.example.mapboxprototype.SensorType
 import com.example.mapboxprototype.getGeohashAreaInfo
+import com.google.gson.JsonObject
 import com.mapbox.geojson.Feature
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
@@ -15,11 +16,15 @@ import com.mapbox.maps.MapView
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.fillExtrusionLayer
+import com.mapbox.maps.extension.style.layers.generated.symbolLayer
+import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
+import com.mapbox.maps.extension.style.terrain.generated.removeTerrain
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.max
 
 class MainActivity : ComponentActivity() {
     private lateinit var mapView: MapView
@@ -56,16 +61,25 @@ class MainActivity : ComponentActivity() {
             withContext(Dispatchers.Main) {
                 // Add the GeoJSON data as a source
                 mapView.mapboxMap.getStyle { style ->
+                    style.removeTerrain()
                     style.addSource(geoJsonSource("geohash-source") {
                         featureCollection(geoJsonData)
                     })
 
                     // Add the FillExtrusionLayer
                     style.addLayer(fillExtrusionLayer("extrusion-layer", "geohash-source") {
-                        fillExtrusionHeight(Expression.get("value"))
+                        fillExtrusionHeight(Expression.get("height"))
                         fillExtrusionBase(0.0)
-                        fillExtrusionColor("#3bb2d0")
+                        fillExtrusionColor(Expression.get("color"))
                         fillExtrusionOpacity(0.6)
+                    })
+
+                    style.addLayer(symbolLayer("symbol-layer", "geohash-source") {
+                        textField(Expression.get("value"))
+                        textSize(12.0)
+                        textColor("black")
+                        textAnchor(TextAnchor.CENTER)
+                        textAllowOverlap(true)
                     })
                 }
             }
@@ -76,12 +90,17 @@ class MainActivity : ComponentActivity() {
         val features = geohashData.map { (geohash, value) ->
             val (point, area) = getGeohashAreaInfo(geohash)
             val polygonPoints = createPolygonVertices(point, area)
+            val resolution = geohash.length
 
-            Feature.fromGeometry(
-                Polygon.fromLngLats(listOf(polygonPoints)),
-                null,
-                value.toString()
-            )
+            val scaledHeight = scaleHeight(value, resolution)
+            val color = scaleColor(value)
+            val properties = JsonObject().apply {
+                addProperty("height", scaledHeight)
+                addProperty("color", color)
+                addProperty("value", value)
+            }
+
+            Feature.fromGeometry(Polygon.fromLngLats(listOf(polygonPoints)), properties)
         }
         return FeatureCollection.fromFeatures(features)
     }
@@ -100,6 +119,20 @@ class MainActivity : ComponentActivity() {
             Point.fromLngLat(lon - widthDeg / 2, lat + heightDeg / 2),
             Point.fromLngLat(lon - widthDeg / 2, lat - heightDeg / 2) // Closing the polygon
         )
+    }
+
+    private fun scaleHeight(value: Double, resolution: Int): Double {
+        val baseHeight = 100.0 // Base height for visibility
+        val scaleFactor = max(1.0, 12.0 - resolution) // Adjust scale based on resolution
+        return baseHeight + value * scaleFactor
+    }
+
+    private fun scaleColor(value: Double): String {
+        val minValue = 0.0
+        val maxValue = 100.0 // Adjust max value based on your data range
+        val normalizedValue = (value - minValue) / (maxValue - minValue)
+        val hue = (1.0 - normalizedValue) * 240.0 // Blue to Red
+        return "hsl($hue, 100%, 50%)"
     }
 
 }
