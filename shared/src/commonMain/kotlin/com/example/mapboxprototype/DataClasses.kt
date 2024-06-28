@@ -1,0 +1,326 @@
+package com.example.mapboxprototype
+
+enum class AggregateFunction {
+    AVERAGE, MAX, MIN
+}
+
+enum class SensorType {
+    RADON,
+    TEMP,
+    CO2,
+    PM25,
+    VOC,
+    HUMIDITY,
+    LIGHT,
+    VIRUS_RISK,
+    OCCUPANCY
+}
+
+enum class VirtualSensorType(val subtypes: List<Enum<*>>) {
+    VIRUS_RISK(VirusRiskSubtype.entries),
+    OCCUPANCY(OccupancySubtype.entries);
+
+    enum class VirusRiskSubtype {
+        TRANSMISSION_RISK,
+        STALE_AIR,
+        TRANSMISSION_EFFICIENCY,
+        SURVIVAL_RATE
+    }
+
+    enum class OccupancySubtype {
+        VENTILATION_RATE,
+        OCCUPANTS,
+        OCCUPANTS_LOWER,
+        OCCUPANTS_UPPER,
+        ACH,
+        PRESENCE
+    }
+}
+
+val sensorThresholds: Map<SensorType, List<Int>> = mapOf(
+    SensorType.RADON to listOf(100, 150),
+    SensorType.TEMP to listOf(18, 25),
+    SensorType.CO2 to listOf(800, 1000),
+    SensorType.PM25 to listOf(10, 25),
+    SensorType.VOC to listOf(250, 2000),
+    SensorType.HUMIDITY to listOf(25, 30, 60, 70)
+)
+
+val virtualSensorThresholds: Map<VirtualSensorType, Map<Enum<*>, List<Int>>> = mapOf(
+    VirtualSensorType.VIRUS_RISK to mapOf(
+        VirtualSensorType.VirusRiskSubtype.TRANSMISSION_RISK to listOf(1, 4, 7, 10),
+        VirtualSensorType.VirusRiskSubtype.STALE_AIR to listOf(1, 4, 7, 10),
+        VirtualSensorType.VirusRiskSubtype.TRANSMISSION_EFFICIENCY to listOf(1, 4, 7, 10),
+        VirtualSensorType.VirusRiskSubtype.SURVIVAL_RATE to listOf(1, 4, 7, 10)
+    ),
+    VirtualSensorType.OCCUPANCY to mapOf(
+        VirtualSensorType.OccupancySubtype.VENTILATION_RATE to listOf(0, 3, 5, 10, 15, 30),
+        VirtualSensorType.OccupancySubtype.OCCUPANTS to listOf(0, 5, 10, 15, 20, 25, 50, 100, 500),
+        VirtualSensorType.OccupancySubtype.OCCUPANTS_LOWER to listOf(0, 5, 10, 15, 20, 25, 50, 100, 500),
+        VirtualSensorType.OccupancySubtype.OCCUPANTS_UPPER to listOf(0, 5, 10, 15, 20, 25, 50, 100, 500),
+        VirtualSensorType.OccupancySubtype.ACH to listOf(0, 3, 5, 10, 15, 30),
+        VirtualSensorType.OccupancySubtype.PRESENCE to listOf(0, 5, 15, 30, 45, 60)
+    )
+)
+
+val sensorUnits: Map<SensorType, String> = mapOf(
+    SensorType.RADON to "Bq/m³",
+    SensorType.TEMP to "C",
+    SensorType.CO2 to "ppm",
+    SensorType.PM25 to "µg/m³",
+    SensorType.VOC to "ppb",
+    SensorType.HUMIDITY to "%"
+)
+
+val occupancyUnits: Map<VirtualSensorType.OccupancySubtype, String> = mapOf(
+    VirtualSensorType.OccupancySubtype.VENTILATION_RATE to "m³/h",
+    VirtualSensorType.OccupancySubtype.OCCUPANTS to "occupants",
+    VirtualSensorType.OccupancySubtype.OCCUPANTS_LOWER to "occupants",
+    VirtualSensorType.OccupancySubtype.OCCUPANTS_UPPER to "occupants",
+    VirtualSensorType.OccupancySubtype.ACH to "ACH",
+    VirtualSensorType.OccupancySubtype.PRESENCE to "minutes"
+)
+
+val virtualSensorUnits: Map<VirtualSensorType, Map<Enum<*>, String>> = mapOf(
+    VirtualSensorType.OCCUPANCY to mapOf(
+        VirtualSensorType.OccupancySubtype.VENTILATION_RATE to "m³/h",
+        VirtualSensorType.OccupancySubtype.OCCUPANTS to "occupants",
+        VirtualSensorType.OccupancySubtype.OCCUPANTS_LOWER to "occupants",
+        VirtualSensorType.OccupancySubtype.OCCUPANTS_UPPER to "occupants",
+        VirtualSensorType.OccupancySubtype.ACH to "ACH",
+        VirtualSensorType.OccupancySubtype.PRESENCE to "minutes"
+    )
+)
+
+data class SensorData(
+    val serialNumber: String,
+    val vocYellowHours: Int?,
+    val vocRedHours: Int?,
+    val vocHours: Int?,
+    val co2YellowHours: Int?,
+    val co2RedHours: Int?,
+    val co2Hours: Int?,
+    val pm25YellowHours: Int?,
+    val pm25RedHours: Int?,
+    val pm25Hours: Int?,
+    val humidityLowRedHours: Int?,
+    val humidity50Hours: Int?,
+    val humidityHighRedHours: Int?,
+    val humidityHours: Int?,
+    val radonRedHours: Int?,
+    val radon500Hours: Int?,
+    val radon1000Hours: Int?,
+    val radonHours: Int?,
+    val radonAverage: Double?,
+    val tempAverage: Double?,
+    val co2Average: Double?,
+    val pm25Average: Double?,
+    val vocAverage: Double?,
+    val humidityAverage: Double?,
+    val lightAverage: Double?,
+    val radonMin: Double?,
+    val tempMin: Double?,
+    val co2Min: Double?,
+    val pm25Min: Double?,
+    val vocMin: Double?,
+    val humidityMin: Double?,
+    val lightMin: Double?,
+    val radonMax: Double?,
+    val tempMax: Double?,
+    val co2Max: Double?,
+    val pm25Max: Double?,
+    val vocMax: Double?,
+    val humidityMax: Double?,
+    val lightMax: Double?,
+    val sumHandwaves: Int?,
+    val year: Int?,
+    val vsVirusRiskTransmissionRiskAverage: Double?,
+    val vsVirusRiskStaleAirAverage: Double?,
+    val vsVirusRiskTransmissionEfficiencyAverage: Double?,
+    val vsVirusRiskSurvivalRateAverage: Double?,
+    val vsVirusRiskTransmissionRiskMin: Double?,
+    val vsVirusRiskStaleAirMin: Double?,
+    val vsVirusRiskTransmissionEfficiencyMin: Double?,
+    val vsVirusRiskSurvivalRateMin: Double?,
+    val vsVirusRiskTransmissionRiskMax: Double?,
+    val vsVirusRiskStaleAirMax: Double?,
+    val vsVirusRiskTransmissionEfficiencyMax: Double?,
+    val vsVirusRiskSurvivalRateMax: Double?,
+    val vsOccupancyVentilationRateAverage: Double?,
+    val vsOccupancyOccupantsAverage: Double?,
+    val vsOccupancyOccupantsUpperAverage: Double?,
+    val vsOccupancyOccupantsLowerAverage: Double?,
+    val vsOccupancyAchAverage: Double?,
+    val vsOccupancyPresenceAverage: Double?,
+    val vsOccupancyVentilationRateMin: Double?,
+    val vsOccupancyOccupantsMin: Double?,
+    val vsOccupancyOccupantsUpperMin: Double?,
+    val vsOccupancyOccupantsLowerMin: Double?,
+    val vsOccupancyAchMin: Double?,
+    val vsOccupancyPresenceMin: Double?,
+    val vsOccupancyVentilationRateMax: Double?,
+    val vsOccupancyOccupantsMax: Double?,
+    val vsOccupancyOccupantsUpperMax: Double?,
+    val vsOccupancyOccupantsLowerMax: Double?,
+    val vsOccupancyAchMax: Double?,
+    val vsOccupancyPresenceMax: Double?,
+    val vsOccupancyVentilationRateSum: Double?,
+    val vsOccupancyOccupantsSum: Double?,
+    val vsOccupancyOccupantsUpperSum: Double?,
+    val vsOccupancyOccupantsLowerSum: Double?,
+    val vsOccupancyAchSum: Double?,
+    val vsOccupancyPresenceSum: Double?,
+    val geohash: String,
+    val lat: Double?,
+    val long: Double?,
+    val week: String
+)
+
+fun mapToSensorData(values: List<String>): SensorData {
+    return SensorData(
+        serialNumber = values[0],
+        vocYellowHours = values[1].toIntOrNull(),
+        vocRedHours = values[2].toIntOrNull(),
+        vocHours = values[3].toIntOrNull(),
+        co2YellowHours = values[4].toIntOrNull(),
+        co2RedHours = values[5].toIntOrNull(),
+        co2Hours = values[6].toIntOrNull(),
+        pm25YellowHours = values[7].toIntOrNull(),
+        pm25RedHours = values[8].toIntOrNull(),
+        pm25Hours = values[9].toIntOrNull(),
+        humidityLowRedHours = values[10].toIntOrNull(),
+        humidity50Hours = values[11].toIntOrNull(),
+        humidityHighRedHours = values[12].toIntOrNull(),
+        humidityHours = values[13].toIntOrNull(),
+        radonRedHours = values[14].toIntOrNull(),
+        radon500Hours = values[15].toIntOrNull(),
+        radon1000Hours = values[16].toIntOrNull(),
+        radonHours = values[17].toIntOrNull(),
+        radonAverage = values[18].toDoubleOrNull(),
+        tempAverage = values[19].toDoubleOrNull(),
+        co2Average = values[20].toDoubleOrNull(),
+        pm25Average = values[21].toDoubleOrNull(),
+        vocAverage = values[22].toDoubleOrNull(),
+        humidityAverage = values[23].toDoubleOrNull(),
+        lightAverage = values[24].toDoubleOrNull(),
+        radonMin = values[25].toDoubleOrNull(),
+        tempMin = values[26].toDoubleOrNull(),
+        co2Min = values[27].toDoubleOrNull(),
+        pm25Min = values[28].toDoubleOrNull(),
+        vocMin = values[29].toDoubleOrNull(),
+        humidityMin = values[30].toDoubleOrNull(),
+        lightMin = values[31].toDoubleOrNull(),
+        radonMax = values[32].toDoubleOrNull(),
+        tempMax = values[33].toDoubleOrNull(),
+        co2Max = values[34].toDoubleOrNull(),
+        pm25Max = values[35].toDoubleOrNull(),
+        vocMax = values[36].toDoubleOrNull(),
+        humidityMax = values[37].toDoubleOrNull(),
+        lightMax = values[38].toDoubleOrNull(),
+        sumHandwaves = values[39].toIntOrNull(),
+        year = values[40].toIntOrNull(),
+        vsVirusRiskTransmissionRiskAverage = values[41].toDoubleOrNull(),
+        vsVirusRiskStaleAirAverage = values[42].toDoubleOrNull(),
+        vsVirusRiskTransmissionEfficiencyAverage = values[43].toDoubleOrNull(),
+        vsVirusRiskSurvivalRateAverage = values[44].toDoubleOrNull(),
+        vsVirusRiskTransmissionRiskMin = values[45].toDoubleOrNull(),
+        vsVirusRiskStaleAirMin = values[46].toDoubleOrNull(),
+        vsVirusRiskTransmissionEfficiencyMin = values[47].toDoubleOrNull(),
+        vsVirusRiskSurvivalRateMin = values[48].toDoubleOrNull(),
+        vsVirusRiskTransmissionRiskMax = values[49].toDoubleOrNull(),
+        vsVirusRiskStaleAirMax = values[50].toDoubleOrNull(),
+        vsVirusRiskTransmissionEfficiencyMax = values[51].toDoubleOrNull(),
+        vsVirusRiskSurvivalRateMax = values[52].toDoubleOrNull(),
+        vsOccupancyVentilationRateAverage = values[53].toDoubleOrNull(),
+        vsOccupancyOccupantsAverage = values[54].toDoubleOrNull(),
+        vsOccupancyOccupantsUpperAverage = values[55].toDoubleOrNull(),
+        vsOccupancyOccupantsLowerAverage = values[56].toDoubleOrNull(),
+        vsOccupancyAchAverage = values[57].toDoubleOrNull(),
+        vsOccupancyPresenceAverage = values[58].toDoubleOrNull(),
+        vsOccupancyVentilationRateMin = values[59].toDoubleOrNull(),
+        vsOccupancyOccupantsMin = values[60].toDoubleOrNull(),
+        vsOccupancyOccupantsUpperMin = values[61].toDoubleOrNull(),
+        vsOccupancyOccupantsLowerMin = values[62].toDoubleOrNull(),
+        vsOccupancyAchMin = values[63].toDoubleOrNull(),
+        vsOccupancyPresenceMin = values[64].toDoubleOrNull(),
+        vsOccupancyVentilationRateMax = values[65].toDoubleOrNull(),
+        vsOccupancyOccupantsMax = values[66].toDoubleOrNull(),
+        vsOccupancyOccupantsUpperMax = values[67].toDoubleOrNull(),
+        vsOccupancyOccupantsLowerMax = values[68].toDoubleOrNull(),
+        vsOccupancyAchMax = values[69].toDoubleOrNull(),
+        vsOccupancyPresenceMax = values[70].toDoubleOrNull(),
+        vsOccupancyVentilationRateSum = values[71].toDoubleOrNull(),
+        vsOccupancyOccupantsSum = values[72].toDoubleOrNull(),
+        vsOccupancyOccupantsUpperSum = values[73].toDoubleOrNull(),
+        vsOccupancyOccupantsLowerSum = values[74].toDoubleOrNull(),
+        vsOccupancyAchSum = values[75].toDoubleOrNull(),
+        vsOccupancyPresenceSum = values[76].toDoubleOrNull(),
+        geohash = values[77],
+        lat = values[78].toDoubleOrNull(),
+        long = values[79].toDoubleOrNull(),
+        week = values[80]
+    )
+}
+
+
+fun getPropertyGetterMap(row: SensorData): Map<String, Double?> {
+    return mapOf(
+        "radon_max" to row.radonMax,
+        "temp_max" to row.tempMax,
+        "co2_max" to row.co2Max,
+        "pm25_max" to row.pm25Max,
+        "voc_max" to row.vocMax,
+        "humidity_max" to row.humidityMax,
+        "light_max" to row.lightMax,
+        "radon_min" to row.radonMin,
+        "temp_min" to row.tempMin,
+        "co2_min" to row.co2Min,
+        "pm25_min" to row.pm25Min,
+        "voc_min" to row.vocMin,
+        "humidity_min" to row.humidityMin,
+        "light_min" to row.lightMin,
+        "radon_average" to row.radonAverage,
+        "temp_average" to row.tempAverage,
+        "co2_average" to row.co2Average,
+        "pm25_average" to row.pm25Average,
+        "voc_average" to row.vocAverage,
+        "humidity_average" to row.humidityAverage,
+        "light_average" to row.lightAverage,
+        "vs_virusrisk_transmissionrisk_average" to row.vsVirusRiskTransmissionRiskAverage,
+        "vs_virusrisk_staleair_average" to row.vsVirusRiskStaleAirAverage,
+        "vs_virusrisk_transmissionefficiency_average" to row.vsVirusRiskTransmissionEfficiencyAverage,
+        "vs_virusrisk_survivalrate_average" to row.vsVirusRiskSurvivalRateAverage,
+        "vs_virusrisk_transmissionrisk_min" to row.vsVirusRiskTransmissionRiskMin,
+        "vs_virusrisk_staleair_min" to row.vsVirusRiskStaleAirMin,
+        "vs_virusrisk_transmissionefficiency_min" to row.vsVirusRiskTransmissionEfficiencyMin,
+        "vs_virusrisk_survivalrate_min" to row.vsVirusRiskSurvivalRateMin,
+        "vs_virusrisk_transmissionrisk_max" to row.vsVirusRiskTransmissionRiskMax,
+        "vs_virusrisk_staleair_max" to row.vsVirusRiskStaleAirMax,
+        "vs_virusrisk_transmissionefficiency_max" to row.vsVirusRiskTransmissionEfficiencyMax,
+        "vs_virusrisk_survivalrate_max" to row.vsVirusRiskSurvivalRateMax,
+        "vs_occupancy_ventilationrate_average" to row.vsOccupancyVentilationRateAverage,
+        "vs_occupancy_occupants_average" to row.vsOccupancyOccupantsAverage,
+        "vs_occupancy_occupantsupper_average" to row.vsOccupancyOccupantsUpperAverage,
+        "vs_occupancy_occupantslower_average" to row.vsOccupancyOccupantsLowerAverage,
+        "vs_occupancy_ach_average" to row.vsOccupancyAchAverage,
+        "vs_occupancy_presence_average" to row.vsOccupancyPresenceAverage,
+        "vs_occupancy_ventilationrate_min" to row.vsOccupancyVentilationRateMin,
+        "vs_occupancy_occupants_min" to row.vsOccupancyOccupantsMin,
+        "vs_occupancy_occupantsupper_min" to row.vsOccupancyOccupantsUpperMin,
+        "vs_occupancy_occupantslower_min" to row.vsOccupancyOccupantsLowerMin,
+        "vs_occupancy_ach_min" to row.vsOccupancyAchMin,
+        "vs_occupancy_presence_min" to row.vsOccupancyPresenceMin,
+        "vs_occupancy_ventilationrate_max" to row.vsOccupancyVentilationRateMax,
+        "vs_occupancy_occupants_max" to row.vsOccupancyOccupantsMax,
+        "vs_occupancy_occupantsupper_max" to row.vsOccupancyOccupantsUpperMax,
+        "vs_occupancy_occupantslower_max" to row.vsOccupancyOccupantsLowerMax,
+        "vs_occupancy_ach_max" to row.vsOccupancyAchMax,
+        "vs_occupancy_presence_max" to row.vsOccupancyPresenceMax,
+        "vs_occupancy_ventilationrate_sum" to row.vsOccupancyVentilationRateSum,
+        "vs_occupancy_occupants_sum" to row.vsOccupancyOccupantsSum,
+        "vs_occupancy_occupantsupper_sum" to row.vsOccupancyOccupantsUpperSum,
+        "vs_occupancy_occupantslower_sum" to row.vsOccupancyOccupantsLowerSum,
+        "vs_occupancy_ach_sum" to row.vsOccupancyAchSum,
+        "vs_occupancy_presence_sum" to row.vsOccupancyPresenceSum
+    )
+}

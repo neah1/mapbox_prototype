@@ -1,13 +1,10 @@
 plugins {
-    kotlin("multiplatform")
-    id("com.android.library")
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidLibrary)
 }
 
-@OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    targetHierarchy.default()
-
-    android {
+    androidTarget {
         compilations.all {
             kotlinOptions {
                 jvmTarget = "1.8"
@@ -22,26 +19,34 @@ kotlin {
     ).forEach {
         it.binaries.framework {
             baseName = "shared"
+            isStatic = true
         }
     }
 
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-            }
+        commonMain.dependencies {
+            implementation(libs.kotlinx.coroutines.core)
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.core)
         }
     }
+
+    task("testClasses")
 }
 
 android {
     namespace = "com.example.mapboxprototype"
-    compileSdk = 33
+    compileSdk = 34
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
     }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+}
+dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 }

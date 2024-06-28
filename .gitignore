@@ -8,4 +8,8 @@ captures
 .cxx
 local.properties
 xcuserdata
+
 gradle.properties
+shared/src/commonMain/resources/iaq_data.csv
+
+shared/src/androidMain/resources/iaq_data.csv
