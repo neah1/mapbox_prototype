@@ -16,6 +16,7 @@ actual object SensorDataParser {
             lines
                 .drop(1) // Skip header line
                 .filter { it.isNotBlank() && it.split(",").last() == week }
+                // TODO remove this line
                 .take(1000)
                 .mapNotNull { line ->
                     val values = line.split(",")

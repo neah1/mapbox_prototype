@@ -13,6 +13,7 @@ import com.mapbox.geojson.Point
 import com.mapbox.geojson.Polygon
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
+import com.mapbox.maps.Style
 import com.mapbox.maps.extension.style.expressions.generated.Expression
 import com.mapbox.maps.extension.style.layers.addLayer
 import com.mapbox.maps.extension.style.layers.generated.fillExtrusionLayer
@@ -36,14 +37,17 @@ class MainActivity : ComponentActivity() {
         mapView.mapboxMap.setCamera(
             CameraOptions.Builder()
                 .center(Point.fromLngLat(-98.0, 39.5))
-                .pitch(0.0)
+                .pitch(30.0)
                 .zoom(2.0)
                 .bearing(0.0)
                 .build()
         )
         setContentView(mapView)
 
-        retrieveAndDisplayGeohashData()
+        mapView.mapboxMap.apply {
+            loadStyle(Style.DARK)
+            retrieveAndDisplayGeohashData()
+        }
     }
 
     private fun retrieveAndDisplayGeohashData() {
