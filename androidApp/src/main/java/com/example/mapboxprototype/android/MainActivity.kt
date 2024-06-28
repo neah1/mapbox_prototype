@@ -1,19 +1,22 @@
 package com.example.mapboxprototype.android
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.mapboxprototype.AggregateFunction
 import com.example.mapboxprototype.SensorType
 import com.example.mapboxprototype.getGeohashAreaInfo
+import com.mapbox.geojson.Feature
+import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
+import com.mapbox.geojson.Polygon
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
-import com.mapbox.maps.plugin.annotation.annotations
-import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
-import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
-import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
+import com.mapbox.maps.extension.style.expressions.generated.Expression
+import com.mapbox.maps.extension.style.layers.addLayer
+import com.mapbox.maps.extension.style.layers.generated.fillExtrusionLayer
+import com.mapbox.maps.extension.style.sources.addSource
+import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,28 +48,58 @@ class MainActivity : ComponentActivity() {
                 SensorType.RADON,
                 AggregateFunction.MAX,
                 null,
-                5
+                3
             )
 
-            // Log the geohash data
-            Log.i("GeohashData", "${geohashData.size}")
-
-            // Create a list of PointAnnotationOptions
-            val annotationOptionsList = geohashData.map { (geohash, value) ->
-                // Decode the geohash to a Point (latitude, longitude)
-                val (point, area) = getGeohashAreaInfo(geohash)
-                PointAnnotationOptions()
-                    .withPoint(Point.fromLngLat(point.first, point.second))
-                    .withTextField(value.toString())
-            }
+            val geoJsonData = createGeoJsonData(geohashData)
 
             withContext(Dispatchers.Main) {
-                // Create a PointAnnotationManager for adding points to the map
-                val pointAnnotationManager: PointAnnotationManager = mapView.annotations.createPointAnnotationManager()
-                // Create annotations in one go
-                pointAnnotationManager.create(annotationOptionsList)
+                // Add the GeoJSON data as a source
+                mapView.mapboxMap.getStyle { style ->
+                    style.addSource(geoJsonSource("geohash-source") {
+                        featureCollection(geoJsonData)
+                    })
+
+                    // Add the FillExtrusionLayer
+                    style.addLayer(fillExtrusionLayer("extrusion-layer", "geohash-source") {
+                        fillExtrusionHeight(Expression.get("value"))
+                        fillExtrusionBase(0.0)
+                        fillExtrusionColor("#3bb2d0")
+                        fillExtrusionOpacity(0.6)
+                    })
+                }
             }
         }
+    }
+
+    private fun createGeoJsonData(geohashData: Map<String, Double>): FeatureCollection {
+        val features = geohashData.map { (geohash, value) ->
+            val (point, area) = getGeohashAreaInfo(geohash)
+            val polygonPoints = createPolygonVertices(point, area)
+
+            Feature.fromGeometry(
+                Polygon.fromLngLats(listOf(polygonPoints)),
+                null,
+                value.toString()
+            )
+        }
+        return FeatureCollection.fromFeatures(features)
+    }
+
+    private fun createPolygonVertices(center: Pair<Double, Double>, area: Pair<Double, Double>): List<Point> {
+        // Create a polygon around the center point with given width and height in km
+        val (lon, lat) = center
+        val (widthKm, heightKm) = area
+        val widthDeg = widthKm / 111.32 // Convert width from km to degrees (approx)
+        val heightDeg = heightKm / 110.57 // Convert height from km to degrees (approx)
+
+        return listOf(
+            Point.fromLngLat(lon - widthDeg / 2, lat - heightDeg / 2),
+            Point.fromLngLat(lon + widthDeg / 2, lat - heightDeg / 2),
+            Point.fromLngLat(lon + widthDeg / 2, lat + heightDeg / 2),
+            Point.fromLngLat(lon - widthDeg / 2, lat + heightDeg / 2),
+            Point.fromLngLat(lon - widthDeg / 2, lat - heightDeg / 2) // Closing the polygon
+        )
     }
 
 }

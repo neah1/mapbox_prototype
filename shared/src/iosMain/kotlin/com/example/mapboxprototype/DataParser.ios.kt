@@ -15,7 +15,7 @@ package com.example.mapboxprototype
 //}
 
 actual object SensorDataParser {
-    actual suspend fun parseCsv(filePath: String, week: String): List<SensorData> {
+    actual suspend fun parseCsv(filePath: String, column:String, week: String): List<Pair<Double, String>> {
         TODO("Not yet implemented")
     }
 
