@@ -1,6 +1,7 @@
 package com.example.mapboxprototype.android
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.mapboxprototype.AggregateFunction
@@ -32,14 +33,13 @@ class MainActivity : ComponentActivity() {
                 .bearing(0.0)
                 .build()
         )
-        // Add the map view to the activity (you can also add it to other views as a child)
         setContentView(mapView)
 
         retrieveAndDisplayGeohashData()
     }
 
     private fun retrieveAndDisplayGeohashData() {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             val geohashData = com.example.mapboxprototype.getGeohashData(
                 "2023-48",
                 SensorType.RADON,
@@ -48,23 +48,24 @@ class MainActivity : ComponentActivity() {
                 5
             )
 
-            withContext(Dispatchers.Main) {
-                displayGeohashDataOnMap(geohashData)
+            // Log the geohash data
+            Log.i("GeohashData", "${geohashData.size}")
+
+            // Create a list of PointAnnotationOptions
+            val annotationOptionsList = geohashData.map { (geohash, value) ->
+                // Decode the geohash to a Point (latitude, longitude)
+                val (point, area) = getGeohashAreaInfo(geohash)
+                PointAnnotationOptions()
+                    .withPoint(Point.fromLngLat(point.first, point.second))
+                    .withTextField(value.toString())
             }
-        }
-    }
 
-    private fun displayGeohashDataOnMap(geohashData: Map<String, Double>) {
-        // Create a PointAnnotationManager for adding points to the map
-        val pointAnnotationManager: PointAnnotationManager = mapView.annotations.createPointAnnotationManager()
-
-        for ((geohash, value) in geohashData) {
-            // Decode the geohash to a Point (latitude, longitude)
-            val (point, area) = getGeohashAreaInfo(geohash)
-            val annotationOptions = PointAnnotationOptions()
-                .withPoint(Point.fromLngLat(point.first, point.second))
-                .withTextField(value.toString())
-            pointAnnotationManager.create(annotationOptions)
+            withContext(Dispatchers.Main) {
+                // Create a PointAnnotationManager for adding points to the map
+                val pointAnnotationManager: PointAnnotationManager = mapView.annotations.createPointAnnotationManager()
+                // Create annotations in one go
+                pointAnnotationManager.create(annotationOptionsList)
+            }
         }
     }
 

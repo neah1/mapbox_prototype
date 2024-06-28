@@ -1,7 +1,7 @@
 package com.example.mapboxprototype
 
 expect object SensorDataParser {
-    suspend fun parseCsv(filePath: String, week: String): List<SensorData>
+    suspend fun parseCsv(filePath: String, column:String, week: String): List<Pair<Double, String>>
 }
 
 fun aggregateValues(
@@ -26,23 +26,15 @@ suspend fun getGeohashData(
     virtualSensorSubtype: VirtualSensorType? = null,
     geohashResolution: Int
 ): Map<String, Double> {
-    val data = SensorDataParser.parseCsv("iaq_data.csv", week)
-
     val column = when (selectedSensor) {
         SensorType.VIRUS_RISK, SensorType.OCCUPANCY -> "vs_${selectedSensor.name.lowercase()}_${virtualSensorSubtype?.name?.lowercase()}_${aggregateType.name.lowercase()}"
         else -> "${selectedSensor.name.lowercase()}_${aggregateType.name.lowercase()}"
     }
 
-    val truncatedGeohashData = data.mapNotNull { row ->
-        val propertyGetterMap = getPropertyGetterMap(row)
-        val value = propertyGetterMap[column]
-        if (value != null && row.geohash.isNotEmpty()) {
-            val truncatedGeohash = truncateGeohash(row.geohash, geohashResolution)
-            Pair(value, truncatedGeohash)
-        } else {
-            null
-        }
-    }
+    val data = SensorDataParser.parseCsv("iaq_data.csv", column, week)
+
+    val truncatedGeohashData = data.map { (value, geohash) ->
+        Pair(value, truncateGeohash(geohash, geohashResolution)) }
 
     return aggregateValues(truncatedGeohashData, aggregateType)
 }

@@ -88,8 +88,6 @@ class SensorDataParserTest {
             geohashResolution = 3
         )
 
-        println(result.toString())
-
         assertNotNull(result)
         assertEquals(1141, result.size)
         assertEquals(110.7478109452735, result["9x0"])
